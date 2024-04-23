@@ -1,5 +1,5 @@
 from models.data_source import users
-from utils.crud import read_friends, add_user, search_user, remove_user
+from utils.crud import read_friends, add_user, search_user, remove_user, update_user
 
 if __name__ == '__main__':
     while True:
@@ -9,6 +9,7 @@ if __name__ == '__main__':
         print("2. Add new user")
         print("3. Search user")
         print("4. Remove user")
+        print("5. Update user")
         menu_option = input("Choose an option: ")
         if menu_option == "0":
             break
@@ -20,3 +21,5 @@ if __name__ == '__main__':
             search_user(users)
         if menu_option == "4":
             remove_user(users)
+        if menu_option == "5":
+            update_user(users)
