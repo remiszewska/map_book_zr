@@ -7,14 +7,16 @@ def add_user(lista: list) -> None:
     imie = input("Podaj imie: ")
     nazwisko = input("Podaj nazwisko: ")
     liczba_postow = int(input("Podaj liczbe postów użytkownika: "))
-    new_user = {"name": imie, "surname": nazwisko, "posts": liczba_postow, }
+    nazwa_miejscowosci = input("Podaj nazwę miejscowości: ")
+    new_user = {"name": imie, "surname": nazwisko, "posts": liczba_postow, "location": nazwa_miejscowosci }
     lista.append(new_user)
 
-def search_user(users: list):
+def search_user(users: list)->dict:
     imie = input("Podaj imię: ")
     for user in users:
         if user["name"] == imie:
             print(user)
+            return user
 
 def remove_user(users: list):
     imie = input("Podaj imię: ")
