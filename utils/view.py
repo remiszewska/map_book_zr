@@ -1,5 +1,86 @@
 from tkinter import *
 
+# instrukcja sterująca
+
+users = []
+
+
+class User:
+    def __init__(self, name, surname, posts, location):
+        self.name = name
+        self.surname = surname
+        self.posts = posts
+        self.location = location
+
+
+def lista_uzytknikow():
+    listbox_lista_obiektow.delete(0, END)
+    for idx, user in enumerate(users):
+        listbox_lista_obiektow.insert(idx, f'{user.name} {user.surname} {user.posts} {user.location}')
+
+
+def dodaj_uzytkownika():
+    imie = entry_imie.get()
+    nazwisko = entry_nazwisko.get()
+    posty = entry_liczba_postow.get()
+    lokalizacja = entry_lokalizacja.get()
+    print(imie, nazwisko, posty, lokalizacja)
+    users.append(User(imie, nazwisko, posty, lokalizacja))
+
+    lista_uzytknikow()
+
+    entry_imie.delete(0, END)
+    entry_nazwisko.delete(0, END)
+    entry_liczba_postow.delete(0, END)
+    entry_lokalizacja.delete(0, END)
+
+    entry_imie.focus()
+
+
+def usun_uzytkownika():
+    i = listbox_lista_obiektow.index(ACTIVE)
+    print(i)
+    users.pop(i)
+    lista_uzytknikow()
+
+
+def pokaz_szczegoly_uzytkownika():
+    i = listbox_lista_obiektow.index(ACTIVE)
+    imie = users[i].name
+    label_imie_szczegoly_obiektu_wartosc.config(text=imie)
+    nazwisko = users[i].surname
+    label_nazwisko_szczegoly_obiektu_wartosc.config(text=nazwisko)
+    posty = users[i].posts
+    label_liczba_postow_szczegoly_obiektu_wartosc.config(text=posty)
+    lokalizacja = users[i].location
+    label_lokalizacja_szczegoly_obiektu_wartosc.config(text=lokalizacja)
+
+
+def edytuj_uzytkownika():
+    i = listbox_lista_obiektow.index(ACTIVE)
+    entry_imie.insert(0, users[i].name)
+    entry_nazwisko.insert(0, users[i].surname)
+    entry_liczba_postow.insert(0, users[i].posts)
+    entry_lokalizacja.insert(0, users[i].location)
+
+    button_dodaj_uzytkownika.config(text="Zapisz zmiany", command=lambda: aktualizuj_uzytkownika(i))
+
+
+def aktualizuj_uzytkownika(i):
+    users[i].name = entry_imie.get()
+    users[i].surname = entry_nazwisko.get()
+    users[i].posts = entry_liczba_postow.get()
+    users[i].location = entry_lokalizacja.get()
+    lista_uzytknikow()
+    button_dodaj_uzytkownika.config(text="Dodaj użytkownika", command=dodaj_uzytkownika)
+    entry_imie.delete(0, END)
+    entry_nazwisko.delete(0, END)
+    entry_liczba_postow.delete(0, END)
+    entry_lokalizacja.delete(0, END)
+    entry_imie.focus()
+
+
+# GUI
 root = Tk()
 root.title("MapBook")
 root.geometry("800x500")
@@ -11,15 +92,15 @@ ramka_szczegoly_obiektu = Frame(root)
 
 ramka_lista_obiektow.grid(column=0, row=0, padx=50)
 ramka_formularz.grid(column=1, row=0)
-ramka_szczegoly_obiektu.grid(column=0, row=1, columnspan=2)
+ramka_szczegoly_obiektu.grid(column=0, row=1, columnspan=2, padx=50, pady=20)
 
 # lista obiektów
 
 label_lista_obiektow = Label(ramka_lista_obiektow, text="Lista obiektów: ")
 listbox_lista_obiektow = Listbox(ramka_lista_obiektow, width=50)
-button_pokaz_szczegoly = Button(ramka_lista_obiektow, text="Pokaż szczegóły")
-button_usun_obiekkt = Button(ramka_lista_obiektow, text="Usuń obiekt")
-button_edytuj_obiekt = Button(ramka_lista_obiektow, text="Edytuj obiekt")
+button_pokaz_szczegoly = Button(ramka_lista_obiektow, text="Pokaż szczegóły", command=pokaz_szczegoly_uzytkownika)
+button_usun_obiekkt = Button(ramka_lista_obiektow, text="Usuń obiekt", command=usun_uzytkownika)
+button_edytuj_obiekt = Button(ramka_lista_obiektow, text="Edytuj obiekt", command=edytuj_uzytkownika)
 
 label_lista_obiektow.grid(row=0, column=0, columnspan=3)
 listbox_lista_obiektow.grid(row=1, column=0, columnspan=3)
@@ -51,7 +132,7 @@ entry_nazwisko.grid(row=2, column=1)
 entry_liczba_postow.grid(row=3, column=1)
 entry_lokalizacja.grid(row=4, column=1)
 
-button_dodaj_uzytkownika = Button(ramka_formularz, text="Dodaj użytkownika")
+button_dodaj_uzytkownika = Button(ramka_formularz, text="Dodaj użytkownika", command=dodaj_uzytkownika)
 button_dodaj_uzytkownika.grid(row=5, column=1, columnspan=2)
 
 # szczegóły obiektu
@@ -62,10 +143,10 @@ label_nazwisko_szczegoly_obiektu = Label(ramka_szczegoly_obiektu, text="Nazwisko
 label_liczba_postow_szczegoly_obiektu = Label(ramka_szczegoly_obiektu, text="Liczba postów: ")
 label_lokalizacja_szczegoly_obiektu = Label(ramka_szczegoly_obiektu, text="Lokalizacja: ")
 
-label_imie_szczegoly_obiektu_wartosc = Label(ramka_szczegoly_obiektu, text="...")
-label_nazwisko_szczegoly_obiektu_wartosc = Label(ramka_szczegoly_obiektu, text="...")
-label_liczba_postow_szczegoly_obiektu_wartosc = Label(ramka_szczegoly_obiektu, text="...")
-label_lokalizacja_szczegoly_obiektu_wartosc = Label(ramka_szczegoly_obiektu, text="...")
+label_imie_szczegoly_obiektu_wartosc = Label(ramka_szczegoly_obiektu, text="...", width=10)
+label_nazwisko_szczegoly_obiektu_wartosc = Label(ramka_szczegoly_obiektu, text="...", width=10)
+label_liczba_postow_szczegoly_obiektu_wartosc = Label(ramka_szczegoly_obiektu, text="...", width=10)
+label_lokalizacja_szczegoly_obiektu_wartosc = Label(ramka_szczegoly_obiektu, text="...", width=10)
 
 label_szczegoly_obiektu.grid(row=0, column=0, sticky=W)
 label_imie_szczegoly_obiektu.grid(row=1, column=0, sticky=W)
@@ -76,7 +157,5 @@ label_liczba_postow_szczegoly_obiektu.grid(row=1, column=4)
 label_liczba_postow_szczegoly_obiektu_wartosc.grid(row=1, column=5)
 label_lokalizacja_szczegoly_obiektu.grid(row=1, column=6)
 label_lokalizacja_szczegoly_obiektu_wartosc.grid(row=1, column=7)
-
-
 
 root.mainloop()
