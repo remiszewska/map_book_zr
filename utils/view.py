@@ -16,6 +16,8 @@ class User:
         self.posts = posts
         self.location = location
         self.wspolrzedne = User.wspolrzedne(self)
+        self.marker = map_widget.set_marker(self.wspolrzedne[0], self.wspolrzedne[1],
+                                            text=f"{self.name}")
 
     def wspolrzedne(self) -> list:
         url: str = f'https://pl.wikipedia.org/wiki/{self.location}'
@@ -31,8 +33,7 @@ def lista_uzytknikow():
     listbox_lista_obiektow.delete(0, END)
     for idx, user in enumerate(users):
         listbox_lista_obiektow.insert(idx, f'{user.name} {user.surname} {user.posts} {user.location}')
-        user.marker = map_widget.set_marker(user.wspolrzedne[0], user.wspolrzedne[1],
-                              text=f"{user.name}")
+
 
 
 def dodaj_uzytkownika():
@@ -56,6 +57,7 @@ def dodaj_uzytkownika():
 def usun_uzytkownika():
     i = listbox_lista_obiektow.index(ACTIVE)
     print(i)
+    users[i].marker.delete()
     users.pop(i)
     lista_uzytknikow()
 
@@ -89,6 +91,10 @@ def aktualizuj_uzytkownika(i):
     users[i].surname = entry_nazwisko.get()
     users[i].posts = entry_liczba_postow.get()
     users[i].location = entry_lokalizacja.get()
+    users[i].wspolrzedne = User.wspolrzedne(users[i])
+    users[i].marker.delete()
+    users[i].marker = map_widget.set_marker(users[i].wspolrzedne[0], users[i].wspolrzedne[1],
+                                        text=f"{users[i].name}")
     lista_uzytknikow()
     button_dodaj_uzytkownika.config(text="Dodaj użytkownika", command=dodaj_uzytkownika)
     entry_imie.delete(0, END)
