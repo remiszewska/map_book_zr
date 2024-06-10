@@ -3,6 +3,15 @@ from tkinter import *
 import requests
 import tkintermapview
 from bs4 import BeautifulSoup
+import psycopg2 as ps
+
+db_params = ps.connect(
+    database="mapbook",
+    user="postgres",
+    password="geoinformatyka",
+    host="localhost",
+    port="5432"
+)
 
 # instrukcja sterująca
 
@@ -10,39 +19,54 @@ users = []
 
 
 class User:
-    def __init__(self, name, surname, posts, location):
+    def __init__(self, name, surname, posts, location, wspolrzedne):
         self.name = name
         self.surname = surname
         self.posts = posts
         self.location = location
-        self.wspolrzedne = User.wspolrzedne(self)
-        self.marker = map_widget.set_marker(self.wspolrzedne[0], self.wspolrzedne[1],
+        self.wspolrzedne = wspolrzedne
+        self.marker = map_widget.set_marker(float(self.wspolrzedne[1]), float(self.wspolrzedne[0]),
                                             text=f"{self.name}")
 
-    def wspolrzedne(self) -> list:
-        url: str = f'https://pl.wikipedia.org/wiki/{self.location}'
-        response = requests.get(url)
-        response_html = BeautifulSoup(response.text, 'html.parser')
-        return [
-            float(response_html.select('.latitude')[1].text.replace(",", ".")),
-            float(response_html.select('.longitude')[1].text.replace(",", "."))
-        ]
+def wspolrzedne(location) -> list:
+    url: str = f'https://pl.wikipedia.org/wiki/{location}'
+    response = requests.get(url)
+    response_html = BeautifulSoup(response.text, 'html.parser')
+    return [
+        float(response_html.select('.latitude')[1].text.replace(",", ".")),
+        float(response_html.select('.longitude')[1].text.replace(",", "."))
+    ]
 
 
 def lista_uzytknikow():
+    cursor = db_params.cursor()
+    sql_show_users = "SELECT id,name,surname,posts,location, st_astext(wspolrzedne) as geom FROM public.users"
+    cursor.execute(sql_show_users)
+    users_db = cursor.fetchall()
+    cursor.close()
     listbox_lista_obiektow.delete(0, END)
-    for idx, user in enumerate(users):
-        listbox_lista_obiektow.insert(idx, f'{user.name} {user.surname} {user.posts} {user.location}')
-
+    for idx, user in enumerate(users_db):
+        listbox_lista_obiektow.insert(idx, f'{user[0]}, {user[1]}, {user[2]}, {user[3]}, {user[4]}')
+        print(user[5][6:-1].split())
+        users.append(User(user[1], user[2], user[3], user[4], [user[5][6:-1].split()[0],user[5][6:-1].split()[1]]))
 
 
 def dodaj_uzytkownika():
+    cursor = db_params.cursor()
     imie = entry_imie.get()
     nazwisko = entry_nazwisko.get()
     posty = entry_liczba_postow.get()
     lokalizacja = entry_lokalizacja.get()
-    print(imie, nazwisko, posty, lokalizacja)
-    users.append(User(imie, nazwisko, posty, lokalizacja))
+    # print(imie, nazwisko, posty, lokalizacja)
+    user_current=User(imie, nazwisko, posty, lokalizacja, wspolrzedne(lokalizacja))
+    users.append(user_current)
+    # print(wspolrzedne(lokalizacja))
+    print(user_current.wspolrzedne[0])
+    # user[5][6:-1].split()
+    sql_insert_user = f"INSERT INTO public.users(name, surname, posts, location, wspolrzedne) VALUES ('{imie}', '{nazwisko}', '{posty}', '{lokalizacja}','SRID=4326;POINT({user_current.wspolrzedne[1]} {user_current.wspolrzedne[0]})');"
+    cursor.execute(sql_insert_user)
+    db_params.commit()
+    cursor.close()
 
     lista_uzytknikow()
 
@@ -55,8 +79,13 @@ def dodaj_uzytkownika():
 
 
 def usun_uzytkownika():
+    cursor = db_params.cursor()
     i = listbox_lista_obiektow.index(ACTIVE)
-    print(i)
+    print(listbox_lista_obiektow.get(i).split(",")[0])
+    sql_delete_user = f"DELETE FROM public.users WHERE id = '{listbox_lista_obiektow.get(i).split(",")[0]}';"
+    cursor.execute(sql_delete_user)
+    db_params.commit()
+    # print(i)
     users[i].marker.delete()
     users.pop(i)
     lista_uzytknikow()
@@ -72,7 +101,7 @@ def pokaz_szczegoly_uzytkownika():
     label_liczba_postow_szczegoly_obiektu_wartosc.config(text=posty)
     lokalizacja = users[i].location
     label_lokalizacja_szczegoly_obiektu_wartosc.config(text=lokalizacja)
-    map_widget.set_position(users[i].wspolrzedne[0], users[i].wspolrzedne[1])
+    map_widget.set_position(float(users[i].wspolrzedne[1]), float(users[i].wspolrzedne[0]))
     map_widget.set_zoom(12)
 
 
@@ -87,14 +116,19 @@ def edytuj_uzytkownika():
 
 
 def aktualizuj_uzytkownika(i):
+    cursor = db_params.cursor()
     users[i].name = entry_imie.get()
     users[i].surname = entry_nazwisko.get()
     users[i].posts = entry_liczba_postow.get()
     users[i].location = entry_lokalizacja.get()
-    users[i].wspolrzedne = User.wspolrzedne(users[i])
+    users[i].wspolrzedne = wspolrzedne(users[i].location)
     users[i].marker.delete()
-    users[i].marker = map_widget.set_marker(users[i].wspolrzedne[0], users[i].wspolrzedne[1],
-                                        text=f"{users[i].name}")
+    users[i].marker = map_widget.set_marker(users[i].wspolrzedne[1], users[i].wspolrzedne[0],
+                                            text=f"{users[i].name}")
+    sql_update_user = f"UPDATE public.users SET name = '{entry_imie.get()}', surname = '{entry_nazwisko.get()}', posts = '{entry_liczba_postow.get()}', location = '{entry_lokalizacja.get()}',id = '{listbox_lista_obiektow.get(i).split(",")[0]}' WHERE id=1;"
+    cursor.execute(sql_update_user)
+    db_params.commit()
+
     lista_uzytknikow()
     button_dodaj_uzytkownika.config(text="Dodaj użytkownika", command=dodaj_uzytkownika)
     entry_imie.delete(0, END)
